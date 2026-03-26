@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B1520">
+<title>Skye — Calm Through Every Storm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:#0B1520;color:#C8DCF0;font-family:'DM Sans',sans-serif;font-weight:400;display:flex;justify-content:center;align-items:center}
+.app{width:100%;max-width:430px;height:100vh;max-height:932px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#0B1520}
+@media(min-width:431px){body{background:#060a10;padding:20px}.app{border-radius:40px;border:2px solid #1f2f42;height:min(95vh,900px);box-shadow:0 40px 100px rgba(0,0,0,0.7)}}
+
+/* STATUS BAR */
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 6px;font-size:11px;color:#6A8BA8;flex-shrink:0;z-index:10}
+.status-loc{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.07);border-radius:20px;padding:4px 12px;font-size:10px}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.status-right{font-size:10px;font-weight:500}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.main::-webkit-scrollbar{display:none}
+.screen{display:none;min-height:100%}
+.screen.active{display:block}
+
+/* BOTTOM NAV */
+.bottom-nav{display:flex;border-top:1px solid rgba(255,255,255,0.06);padding:8px 8px 24px;flex-shrink:0;background:#0B1520;z-index:10}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:none;background:none;cursor:pointer;font-family:‘DM Sans’,sans-serif}
+.nav-btn .ni{font-size:20px}
+.nav-btn .nl{font-size:9px;color:#3A5570;letter-spacing:0.03em}
+.nav-btn.active .nl{color:#2DC88A}
+.nav-btn:active .ni{transform:scale(0.9)}
+
+/* HEADER */
+.sky-header{position:relative;padding:8px 20px 24px;text-align:center;overflow:hidden;min-height:160px}
+.sky-bg{position:absolute;inset:0;transition:background 0.6s}
+.sky-bg.calm{background:linear-gradient(180deg,#0a1628 0%,#112240 55%,transparent 100%)}
+.sky-bg.watch{background:linear-gradient(180deg,#1a1400 0%,#251d00 45%,transparent 100%)}
+.sky-bg.warning{background:linear-gradient(180deg,#1a0010 0%,#240016 45%,transparent 100%)}
+.sky-inner{position:relative;z-index:1}
+.wx-icon{font-size:44px;margin-bottom:4px}
+.wx-temp{font-family:‘DM Serif Display’,serif;font-size:56px;color:#FFFFFF;line-height:1}
+.wx-cond{font-size:11px;color:#6A8BA8;text-transform:uppercase;letter-spacing:0.1em;margin-top:4px}
+.wx-loading{font-size:14px;color:#6A8BA8;padding:40px 0}
+
+/* ALERT BANNER */
+.alert-banner{margin:0 16px 12px;padding:10px 14px;border-radius:12px;display:none;align-items:center;gap:8px;font-size:11px;font-weight:500;animation:slideD 0.3s ease}
+.alert-banner.show{display:flex}
+.alert-banner.wb{background:rgba(255,209,0,0.12);border:1px solid rgba(255,209,0,0.4);color:#FFD100}
+.alert-banner.wr{background:rgba(192,56,106,0.15);border:1px solid rgba(192,56,106,0.5);color:#C0386A}
+@keyframes slideD{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* SAFE CARD */
+.sc{margin:0 16px 12px;padding:14px;border-radius:14px;display:flex;gap:10px;align-items:flex-start;transition:all 0.4s}
+.sc.safe{background:rgba(45,200,138,0.12);border:1px solid rgba(45,200,138,0.3)}
+.sc.caution{background:rgba(255,209,0,0.08);border:1px solid rgba(255,209,0,0.25)}
+.sc.danger{background:rgba(192,56,106,0.1);border:1px solid rgba(192,56,106,0.3)}
+.sc-dot{width:10px;height:10px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.sc.safe .sc-dot{background:#2DC88A;box-shadow:0 0 0 4px rgba(45,200,138,0.15)}
+.sc.caution .sc-dot{background:#FFD100;box-shadow:0 0 0 4px rgba(255,209,0,0.15)}
+.sc.danger .sc-dot{background:#C0386A;box-shadow:0 0 0 4px rgba(192,56,106,0.15)}
+.sc-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.sc.safe .sc-title{color:#2DC88A}
+.sc.caution .sc-title{color:#FFD100}
+.sc.danger .sc-title{color:#C0386A}
+.sc-text{font-size:11px;color:#6A8BA8;line-height:1.55}
+
+/* AM I SAFE BTN */
+.ais-btn{display:block;width:calc(100% - 32px);margin:0 16px 14px;padding:14px;border-radius:14px;border:1px solid rgba(45,200,138,0.35);background:rgba(45,200,138,0.08);color:#2DC88A;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.ais-btn:active{transform:scale(0.98);background:rgba(45,200,138,0.15)}
+
+/* DETAIL GRID */
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px;margin-bottom:12px}
+.dc{background:#142231;border:0.5px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px}
+.dc-l{font-size:9px;color:#3A5570;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px}
+.dc-v{font-size:15px;font-weight:600;margin-bottom:2px}
+.dc-s{font-size:9px;color:#3A5570}
+
+/* COMPANION */
+.comp{margin:0 16px 12px;background:#142231;border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:14px}
+.comp-label{font-size:9px;color:#2DC88A;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.comp-pulse{width:6px;height:6px;border-radius:50%;background:#2DC88A;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.comp-msg{font-family:‘DM Serif Display’,serif;font-style:italic;font-size:14px;color:#C8DCF0;line-height:1.7}
+
+/* BRIEFING */
+.briefing{margin:0 16px 12px;background:rgba(106,175,224,0.08);border:1px solid rgba(106,175,224,0.15);border-radius:14px;padding:14px}
+.briefing-label{font-size:9px;color:#6AAFE0;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px}
+.briefing-text{font-size:13px;color:#C8DCF0;line-height:1.7}
+
+/* TOOLKIT */
+.tk-h{padding:20px 20px 16px}
+.tk-h h2{font-family:‘DM Serif Display’,serif;font-size:24px;color:#FFFFFF;margin-bottom:4px}
+.tk-h p{font-size:13px;color:#6A8BA8}
+.tc{display:flex;align-items:center;gap:14px;margin:0 16px 10px;background:#142231;border:0.5px solid rgba(255,255,255,0.06);border-radius:14px;padding:14px;cursor:pointer;transition:all 0.15s}
+.tc:active{transform:scale(0.98);background:#1a2d40}
+.tc-i{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tc-info{flex:1}
+.tc-n{font-size:14px;color:#FFFFFF;font-weight:500;margin-bottom:2px}
+.tc-d{font-size:11px;color:#6A8BA8}
+.tc-a{color:#3A5570;font-size:16px}
+
+/* OVERLAYS */
+.ov{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:#0B1520;z-index:9999;display:none;flex-direction:column;max-width:430px;margin:0 auto}
+.ov.open{display:flex}
+.ov-h{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;background:#0B1520}
+.ov-back{background:none;border:none;color:#6A8BA8;font-size:22px;cursor:pointer;padding:4px}
+.ov-title{font-family:‘DM Serif Display’,serif;font-size:20px;color:#FFFFFF}
+.ov-body{flex:1;overflow-y:auto;padding:24px 20px;-webkit-overflow-scrolling:touch;background:#0B1520}
+
+/* BREATHING */
+.br-wrap{display:flex;flex-direction:column;align-items:center;padding-top:20px}
+.br-ring{width:200px;height:200px;border-radius:50%;border:2px solid rgba(45,200,138,0.2);display:flex;align-items:center;justify-content:center;transition:all 1s ease;margin-bottom:32px}
+.br-ring.inhale{transform:scale(1.15);border-color:rgba(45,200,138,0.6);background:rgba(45,200,138,0.05)}
+.br-ring.hold{transform:scale(1.15);border-color:rgba(106,175,224,0.5);background:rgba(106,175,224,0.05)}
+.br-ring.exhale{transform:scale(1);border-color:rgba(45,200,138,0.2);background:transparent}
+.br-instr{font-family:‘DM Serif Display’,serif;font-size:22px;color:#FFFFFF}
+.br-num{font-size:48px;color:#2DC88A;font-weight:300;margin-top:4px}
+.br-btn{background:#2DC88A;border:none;border-radius:50px;padding:14px 48px;color:#080f18;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:20px}
+.br-btn:active{transform:scale(0.96)}
+.br-cycles{font-size:12px;color:#3A5570;margin-top:12px}
+.br-desc{font-size:13px;color:#6A8BA8;line-height:1.7;text-align:center;margin-top:24px;max-width:300px}
+
+/* GROUNDING */
+.gr-step{text-align:center;padding:20px 0}
+.gr-num{font-family:‘DM Serif Display’,serif;font-size:72px;color:#6AAFE0;opacity:0.3;line-height:1}
+.gr-sense{font-size:14px;color:#FFFFFF;font-weight:500;margin:8px 0 16px}
+.gr-prompt{font-family:‘DM Serif Display’,serif;font-style:italic;font-size:20px;color:#C8DCF0;line-height:1.6;margin-bottom:24px;max-width:280px;margin-left:auto;margin-right:auto}
+.gr-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:24px}
+.gr-item{background:#142231;border:1px solid rgba(255,255,255,0.08);border-radius:50px;padding:10px 18px;font-size:13px;color:#6A8BA8;cursor:pointer;transition:all 0.2s}
+.gr-item.filled{border-color:#6AAFE0;color:#6AAFE0;background:rgba(106,175,224,0.1)}
+.gr-next{background:#6AAFE0;border:none;border-radius:50px;padding:12px 40px;color:white;font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:500;cursor:pointer}
+.gr-next:disabled{opacity:0.3}
+.gr-done{text-align:center;padding:40px 0}
+.gr-done-i{font-size:48px;margin-bottom:16px}
+.gr-done h3{font-family:‘DM Serif Display’,serif;font-size:24px;color:#FFFFFF;margin-bottom:8px}
+.gr-done p{font-size:14px;color:#6A8BA8;line-height:1.7}
+
+/* CHECKLIST */
+.ck-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.ck-box{width:22px;height:22px;border-radius:6px;border:1.5px solid #3A5570;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:12px;color:transparent;transition:all 0.2s}
+.ck-box.checked{background:#2DC88A;border-color:#2DC88A;color:white}
+.ck-label{font-size:14px;color:#C8DCF0}
+
+/* FACTS */
+.fc{background:rgba(106,175,224,0.08);border:1px solid rgba(106,175,224,0.2);border-radius:14px;padding:18px;margin-bottom:14px}
+.fc-e{font-size:24px;margin-bottom:8px}
+.fc-t{font-size:14px;color:#FFFFFF;font-weight:500;margin-bottom:6px}
+.fc-b{font-size:13px;color:#6A8BA8;line-height:1.65}
+
+/* PROFILE */
+.pr-h{padding:20px 20px 16px}
+.pr-h h2{font-family:‘DM Serif Display’,serif;font-size:24px;color:#FFFFFF;margin-bottom:4px}
+.pr-h p{font-size:13px;color:#6A8BA8}
+.pr-sec{padding:0 16px;margin-bottom:20px}
+.pr-sec-t{font-size:11px;color:#3A5570;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px}
+.tr{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#142231;border-radius:12px;margin-bottom:6px}
+.tr-info{display:flex;align-items:center;gap:10px}
+.tr-icon{font-size:18px}
+.tr-name{font-size:14px;color:#C8DCF0}
+.tgl{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,0.1);position:relative;cursor:pointer;transition:background 0.2s}
+.tgl.on{background:#2DC88A}
+.tgl-k{width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.tgl.on .tgl-k{transform:translateX(20px)}
+
+/* HISTORY */
+.hi-h{padding:20px 20px 16px}
+.hi-h h2{font-family:‘DM Serif Display’,serif;font-size:24px;color:#FFFFFF;margin-bottom:4px}
+.hi-h p{font-size:13px;color:#6A8BA8}
+.ss-card{margin:0 16px 16px;background:#142231;border-radius:16px;padding:18px}
+.ss-row{display:flex;justify-content:space-around;margin-bottom:16px}
+.ss-stat{text-align:center}
+.ss-num{font-family:‘DM Serif Display’,serif;font-size:28px;color:#FFFFFF}
+.ss-lbl{font-size:10px;color:#3A5570;margin-top:2px}
+.ss-bar-h{display:flex;justify-content:space-between;font-size:10px;margin-bottom:6px}
+.ss-bar{height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.ss-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#2DC88A,#6AAFE0)}
+.log-t{font-size:11px;color:#3A5570;text-transform:uppercase;letter-spacing:0.1em;margin:0 16px 10px}
+.log-e{background:#142231;border-radius:12px;padding:14px;margin:0 16px 8px}
+.log-date{font-size:11px;color:#6A8BA8;margin-bottom:4px}
+.log-type{font-size:14px;color:#FFFFFF;font-weight:500;margin-bottom:2px}
+.log-feel{display:flex;align-items:center;gap:6px;font-size:12px;color:#3A5570;margin-bottom:6px}
+.log-note{font-size:12px;color:#6A8BA8;font-style:italic;line-height:1.5}
+
+/* JOURNAL */
+.j-area{width:100%;min-height:120px;background:#142231;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;color:#C8DCF0;font-family:‘DM Sans’,sans-serif;font-size:14px;resize:none;outline:none;line-height:1.6}
+.j-area::placeholder{color:#3A5570}
+.mood-sel{display:flex;gap:8px;justify-content:center;margin:16px 0}
+.mood-b{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.1);background:none;font-size:22px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+.mood-b.sel{border-color:#2DC88A;background:rgba(45,200,138,0.1);transform:scale(1.1)}
+.j-save{width:100%;background:#2DC88A;border:none;border-radius:12px;padding:14px;color:#080f18;font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:16px}
+.j-save:active{transform:scale(0.98)}
+
+/* SAFE MODAL */
+.s-ov{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:10000;display:none;align-items:center;justify-content:center;padding:24px}
+.s-ov.open{display:flex}
+.s-modal{background:#0B1520;border:1px solid rgba(45,200,138,0.2);border-radius:24px;padding:32px 24px;max-width:360px;width:100%;text-align:center;animation:mIn 0.3s ease}
+@keyframes mIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.s-modal-i{font-size:48px;margin-bottom:12px}
+.s-modal h3{font-family:‘DM Serif Display’,serif;font-size:22px;margin-bottom:12px}
+.s-modal p{font-size:14px;color:#6A8BA8;line-height:1.7;margin-bottom:6px}
+.s-modal .disc{font-size:10px;color:#3A5570;margin-top:16px;line-height:1.5}
+.s-modal-x{background:#142231;border:1px solid rgba(255,255,255,0.08);border-radius:50px;padding:12px 32px;color:#C8DCF0;font-family:‘DM Sans’,sans-serif;font-size:13px;cursor:pointer;margin-top:20px}
+
+/* LOADING SCREEN */
+.loading-screen{position:fixed;inset:0;background:#0B1520;z-index:20000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;transition:opacity 0.5s}
+.loading-screen.hide{opacity:0;pointer-events:none}
+.loading-logo{font-family:‘DM Serif Display’,serif;font-size:48px;color:#FFFFFF;margin-bottom:4px}
+.loading-tag{font-family:‘DM Serif Display’,serif;font-style:italic;font-size:16px;color:#2DC88A;margin-bottom:32px}
+.loading-msg{font-size:13px;color:#6A8BA8;margin-bottom:16px}
+.loading-spinner{width:32px;height:32px;border:2px solid rgba(45,200,138,0.2);border-top-color:#2DC88A;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-err{color:#C0386A;font-size:13px;margin-top:12px;display:none}
+.loading-retry{background:#2DC88A;border:none;border-radius:50px;padding:10px 28px;color:#080f18;font-family:‘DM Sans’,sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;display:none}
+
+/* VERSION TAG */
+.vtag{text-align:center;padding:12px;font-size:10px;color:#3A5570}
+</style>
+
+</head>
+<body>
+
+<!-- LOADING -->
+
+<div class="loading-screen" id="loadScr">
+  <div class="loading-logo">Skye</div>
+  <div class="loading-tag">Calm Through Every Storm</div>
+  <div class="loading-msg" id="loadMsg">Finding your location...</div>
+  <div class="loading-spinner" id="loadSpin"></div>
+  <div class="loading-err" id="loadErr"></div>
+  <button class="loading-retry" id="loadRetry" onclick="initApp()">Try Again</button>
+</div>
+
+<div class="app" id="app">
+  <!-- STATUS -->
+  <div class="status-bar">
+    <div class="status-loc"><div class="status-dot" id="sDot" style="background:#2DC88A"></div><span id="sLoc">Loading...</span></div>
+    <div class="status-right" id="sRight">✓ No active alerts</div>
+  </div>
+
+  <div class="main">
+    <!-- HOME -->
+    <div class="screen active" id="scr-home">
+      <div class="sky-header">
+        <div class="sky-bg calm" id="skyBg"></div>
+        <div class="sky-inner">
+          <div class="wx-icon" id="wxIcon">🌤</div>
+          <div class="wx-temp" id="wxTemp">--°</div>
+          <div class="wx-cond" id="wxCond">Loading forecast...</div>
+        </div>
+      </div>
+      <div class="alert-banner wb" id="bannerW"></div>
+      <div class="alert-banner wr" id="bannerD"></div>
+      <div class="sc safe" id="safeCard">
+        <div class="sc-dot"></div>
+        <div><div class="sc-title" id="scTitle">Checking conditions...</div><div class="sc-text" id="scText">Skye is gathering weather data for your location.</div></div>
+      </div>
+      <button class="ais-btn" onclick="openSafe()">Am I Safe?</button>
+      <div class="dg" id="detailGrid">
+        <div class="dc"><div class="dc-l">Conditions</div><div class="dc-v" id="dCond" style="color:#2DC88A">--</div><div class="dc-s" id="dCondS">Loading</div></div>
+        <div class="dc"><div class="dc-l">Wind</div><div class="dc-v" id="dWind" style="color:#C8DCF0">--</div><div class="dc-s" id="dWindS">Loading</div></div>
+        <div class="dc"><div class="dc-l">Humidity</div><div class="dc-v" id="dHum" style="color:#6AAFE0">--</div><div class="dc-s" id="dHumS">Loading</div></div>
+        <div class="dc"><div class="dc-l">Active Alerts</div><div class="dc-v" id="dAlerts" style="color:#2DC88A">0</div><div class="dc-s" id="dAlertS">None</div></div>
+      </div>
+      <div class="comp">
+        <div class="comp-label"><div class="comp-pulse"></div> Skye Companion</div>
+        <div class="comp-msg" id="compMsg">"Checking in with your local conditions. One moment..."</div>
+      </div>
+      <div class="briefing" id="briefBox" style="display:none">
+        <div class="briefing-label">☀️ Morning Briefing</div>
+        <div class="briefing-text" id="briefText"></div>
+      </div>
+      <div class="vtag">Skye v0.2 — Real Weather Data · NWS API</div>
+      <div style="height:16px"></div>
+    </div>
+
+```
+<!-- TOOLKIT -->
+<div class="screen" id="scr-toolkit">
+  <div class="tk-h"><h2>Anxiety Toolkit</h2><p>Evidence-based tools for in-the-moment relief.</p></div>
+  <div class="tc" onclick="openOv('breathing')"><div class="tc-i" style="background:rgba(45,200,138,0.15)">🌬</div><div class="tc-info"><div class="tc-n">Breathing Timer</div><div class="tc-d">Box breathing · Lowers cortisol</div></div><div class="tc-a">›</div></div>
+  <div class="tc" onclick="openOv('grounding')"><div class="tc-i" style="background:rgba(106,175,224,0.15)">🌿</div><div class="tc-info"><div class="tc-n">5-4-3-2-1 Grounding</div><div class="tc-d">Sensory anchoring · Clinically validated</div></div><div class="tc-a">›</div></div>
+  <div class="tc" onclick="openOv('checklist')"><div class="tc-i" style="background:rgba(255,209,0,0.15)">📋</div><div class="tc-info"><div class="tc-n">Preparedness Checklist</div><div class="tc-d">Calm, practical storm readiness</div></div><div class="tc-a">›</div></div>
+  <div class="tc" onclick="openOv('facts')"><div class="tc-i" style="background:rgba(106,80,200,0.15)">⚡</div><div class="tc-info"><div class="tc-n">Storm Facts</div><div class="tc-d">Understand what you're hearing</div></div><div class="tc-a">›</div></div>
+  <div class="tc" onclick="openOv('journal')"><div class="tc-i" style="background:rgba(192,56,106,0.15)">📝</div><div class="tc-info"><div class="tc-n">Post-Storm Journal</div><div class="tc-d">Reflect, track, build resilience</div></div><div class="tc-a">›</div></div>
+  <div style="height:16px"></div>
+</div>
+
+<!-- PROFILE -->
+<div class="screen" id="scr-profile">
+  <div class="pr-h"><h2>Fear Profile</h2><p>Tell Skye what scares you most. Every alert adapts to your triggers.</p></div>
+  <div class="pr-sec">
+    <div class="pr-sec-t">My Storm Triggers</div>
+    <div id="triggerList"></div>
+  </div>
+  <div class="pr-sec">
+    <div class="pr-sec-t">Notification Preferences</div>
+    <div id="prefList"></div>
+  </div>
+  <div style="height:16px"></div>
+</div>
+
+<!-- HISTORY -->
+<div class="screen" id="scr-history">
+  <div class="hi-h"><h2>Storm Season</h2><p>Your journey through this season. You're building resilience.</p></div>
+  <div class="ss-card">
+    <div class="ss-row">
+      <div class="ss-stat"><div class="ss-num" id="hStorms">0</div><div class="ss-lbl">Storms logged</div></div>
+      <div class="ss-stat"><div class="ss-num" id="hAvg">--</div><div class="ss-lbl">Avg anxiety</div></div>
+      <div class="ss-stat"><div class="ss-num" id="hTools">0%</div><div class="ss-lbl">Used toolkit</div></div>
+    </div>
+    <div class="ss-bar-h"><span style="color:#6A8BA8">Season progress</span><span style="color:#2DC88A;font-weight:600">March → June</span></div>
+    <div class="ss-bar"><div class="ss-fill" id="hBar" style="width:25%"></div></div>
+  </div>
+  <div class="log-t">Journal Entries</div>
+  <div id="journalLog"><div class="log-e"><div class="log-date">No entries yet</div><div class="log-note">After a storm, use the Post-Storm Journal in the Toolkit to log how you felt.</div></div></div>
+  <div style="height:16px"></div>
+</div>
+```
+
+  </div>
+
+  <!-- NAV -->
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" onclick="goScr('home',this)"><div class="ni">🌦</div><div class="nl">Now</div></button>
+    <button class="nav-btn" onclick="goScr('toolkit',this)"><div class="ni">🧘</div><div class="nl">Toolkit</div></button>
+    <button class="nav-btn" onclick="goScr('profile',this)"><div class="ni">⚙️</div><div class="nl">Profile</div></button>
+    <button class="nav-btn" onclick="goScr('history',this)"><div class="ni">📊</div><div class="nl">History</div></button>
+  </div>
+</div>
+
+<!-- OVERLAYS -->
+
+<div class="ov" id="ov-breathing"><div class="ov-h"><button class="ov-back" onclick="closeOv('breathing')">←</button><div class="ov-title">Breathing Timer</div></div><div class="ov-body"><div class="br-wrap"><div class="br-ring" id="bRing"><div><div class="br-instr" id="bInstr">Ready</div><div class="br-num" id="bNum"></div></div></div><button class="br-btn" id="bBtn" onclick="startBreath()">Begin</button><div class="br-cycles" id="bCyc"></div><div class="br-desc">Box breathing activates your parasympathetic nervous system and lowers cortisol. Inhale 4 seconds, hold 4, exhale 4, hold 4.</div></div></div></div>
+
+<div class="ov" id="ov-grounding"><div class="ov-h"><button class="ov-back" onclick="closeOv('grounding');resetGr()">←</button><div class="ov-title">5-4-3-2-1 Grounding</div></div><div class="ov-body" id="grBody"></div></div>
+
+<div class="ov" id="ov-checklist"><div class="ov-h"><button class="ov-back" onclick="closeOv('checklist')">←</button><div class="ov-title">Preparedness Checklist</div></div><div class="ov-body"><p style="font-size:13px;color:#6A8BA8;margin-bottom:16px">Having a plan reduces anxiety before a storm even starts.</p><div id="ckList"></div></div></div>
+
+<div class="ov" id="ov-facts"><div class="ov-h"><button class="ov-back" onclick="closeOv('facts')">←</button><div class="ov-title">Storm Facts</div></div><div class="ov-body" id="fcBody"></div></div>
+
+<div class="ov" id="ov-journal"><div class="ov-h"><button class="ov-back" onclick="closeOv('journal')">←</button><div class="ov-title">Post-Storm Journal</div></div><div class="ov-body">
+<p style="font-family:'DM Serif Display',serif;font-size:20px;color:#FFFFFF;margin-bottom:4px">You made it through.</p>
+<p style="font-size:13px;color:#6A8BA8;margin-bottom:20px">Take a moment to check in with yourself.</p>
+<div style="font-size:12px;color:#3A5570;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">How do you feel right now?</div>
+<div class="mood-sel"><button class="mood-b" onclick="selMood(this)">😰</button><button class="mood-b" onclick="selMood(this)">😟</button><button class="mood-b" onclick="selMood(this)">😐</button><button class="mood-b" onclick="selMood(this)">😌</button><button class="mood-b" onclick="selMood(this)">😊</button></div>
+<div style="font-size:12px;color:#3A5570;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">What helped? What didn't?</div>
+<textarea class="j-area" id="jText" placeholder="The breathing timer helped me calm down..."></textarea>
+<button class="j-save" onclick="saveJournal()">Save Entry</button>
+</div></div>
+
+<!-- SAFE MODAL -->
+
+<div class="s-ov" id="sOv" onclick="closeSafe(event)">
+<div class="s-modal">
+<div class="s-modal-i" id="smI">🛡</div>
+<h3 id="smT" style="color:#2DC88A">Checking...</h3>
+<p id="smP">Analyzing current conditions for your location...</p>
+<p id="smE" style="font-size:13px;color:#C8DCF0;margin-top:8px"></p>
+<div class="disc">Based on current data at this time. Skye does not guarantee safety and does not override official NWS warnings. Always follow local emergency guidance.</div>
+<button class="s-modal-x" onclick="closeSafe()">I understand</button>
+</div>
+</div>
+
+<script>
+// ═══ STATE ═══
+let lat=null,lon=null,locName='',appState='calm',alerts=[],wxData={},forecastData=null;
+let pollTimer=null,pollInterval=300000;
+let bInt=null,bPhase=0,bSec=0,bCycles=0;
+const TRIGGERS=[
+  {id:'tornado',icon:'🌪',name:'Tornadoes',on:true},
+  {id:'lightning',icon:'⚡',name:'Lightning',on:true},
+  {id:'wind',icon:'💨',name:'Strong Wind',on:false},
+  {id:'thunder',icon:'🔊',name:'Loud Thunder',on:true},
+  {id:'power',icon:'🔌',name:'Power Outages',on:false},
+  {id:'flood',icon:'🌊',name:'Flooding',on:false},
+  {id:'alone',icon:'🏠',name:'Being Alone',on:true}
+];
+const PREFS=[
+  {id:'prestorm',icon:'🔔',name:'Pre-storm calm check-in',on:true},
+  {id:'morning',icon:'🌅',name:'Morning weather brief',on:true},
+  {id:'allclear',icon:'☀️',name:'Post-storm all clear',on:true}
+];
+
+// ═══ INIT ═══
+function initApp(){
+  document.getElementById('loadMsg').textContent='Finding your location...';
+  document.getElementById('loadSpin').style.display='block';
+  document.getElementById('loadErr').style.display='none';
+  document.getElementById('loadRetry').style.display='none';
+  loadProfile();
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(onGeo,onGeoErr,{enableHighAccuracy:false,timeout:15000});
+  } else {
+    showLoadErr('Geolocation not supported. Using default location.');
+    lat=31.2;lon=-85.1;locName='Columbia, AL';startApp();
+  }
+}
+
+function onGeo(pos){
+  lat=pos.coords.latitude;lon=pos.coords.longitude;
+  document.getElementById('loadMsg').textContent='Getting weather data...';
+  getLocationName().then(()=>startApp()).catch(()=>{locName=lat.toFixed(2)+', '+lon.toFixed(2);startApp()});
+}
+
+function onGeoErr(err){
+  showLoadErr('Location access denied. Using Columbia, AL.');
+  lat=31.2;lon=-85.1;locName='Columbia, AL';
+  setTimeout(startApp,1500);
+}
+
+function showLoadErr(msg){
+  document.getElementById('loadErr').textContent=msg;
+  document.getElementById('loadErr').style.display='block';
+}
+
+async function getLocationName(){
+  try{
+    const r=await fetch('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:{'User-Agent':'Skye Weather App (skye.ctes.app@gmail.com)'}});
+    const d=await r.json();
+    if(d.properties&&d.properties.relativeLocation){
+      const rl=d.properties.relativeLocation.properties;
+      locName=rl.city+', '+rl.state;
+    }
+  }catch(e){locName=lat.toFixed(2)+', '+lon.toFixed(2)}
+}
+
+async function startApp(){
+  document.getElementById('sLoc').textContent=locName;
+  await fetchWeather();
+  await fetchAlerts();
+  updateUI();
+  showBriefing();
+  document.getElementById('loadScr').classList.add('hide');
+  setTimeout(()=>{document.getElementById('loadScr').style.display='none'},600);
+  startPolling();
+}
+
+// ═══ WEATHER DATA ═══
+async function fetchWeather(){
+  try{
+    const r=await fetch('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:{'User-Agent':'Skye Weather App'}});
+    const d=await r.json();
+    const fUrl=d.properties.forecast;
+    const oUrl=d.properties.observationStations;
+    // Get forecast
+    const fr=await fetch(fUrl,{headers:{'User-Agent':'Skye Weather App'}});
+    const fd=await fr.json();
+    forecastData=fd.properties.periods;
+    // Get current observation
+    const or=await fetch(oUrl,{headers:{'User-Agent':'Skye Weather App'}});
+    const od=await or.json();
+    if(od.features&&od.features.length>0){
+      const stUrl=od.features[0].id+'/observations/latest';
+      const sr=await fetch(stUrl,{headers:{'User-Agent':'Skye Weather App'}});
+      const sd=await sr.json();
+      const p=sd.properties;
+      wxData.temp=p.temperature.value!==null?Math.round(p.temperature.value*9/5+32):null;
+      wxData.humidity=p.relativeHumidity.value!==null?Math.round(p.relativeHumidity.value):null;
+      wxData.wind=p.windSpeed.value!==null?Math.round(p.windSpeed.value*0.621371):null;
+      wxData.windDir=p.windDirection.value;
+      wxData.desc=p.textDescription||'';
+    }
+  }catch(e){
+    console.log('Weather fetch error:',e);
+    if(forecastData===null&&wxData.temp===undefined){
+      wxData.temp=null;wxData.desc='Unable to load';wxData.humidity=null;wxData.wind=null;
+    }
+  }
+}
+
+async function fetchAlerts(){
+  try{
+    const r=await fetch('https://api.weather.gov/alerts/active?point='+lat.toFixed(4)+','+lon.toFixed(4),{headers:{'User-Agent':'Skye Weather App'}});
+    const d=await r.json();
+    alerts=d.features||[];
+  }catch(e){console.log('Alert fetch error:',e);alerts=[]}
+}
+
+// ═══ POLLING ═══
+function startPolling(){
+  if(pollTimer)clearInterval(pollTimer);
+  pollTimer=setInterval(async()=>{
+    await fetchWeather();
+    await fetchAlerts();
+    updateUI();
+  },pollInterval);
+}
+
+function setPollRate(ms){
+  pollInterval=ms;
+  startPolling();
+}
+
+// ═══ UI UPDATE ═══
+function updateUI(){
+  // Determine state
+  let hasWarning=false,hasWatch=false,topAlert=null;
+  const warnings=['Tornado Warning','Severe Thunderstorm Warning','Flash Flood Warning','Hurricane Warning'];
+  const watches=['Tornado Watch','Severe Thunderstorm Watch','Flash Flood Watch','Hurricane Watch','Winter Storm Watch','Winter Storm Warning'];
+  for(const a of alerts){
+    const ev=a.properties.event;
+    if(warnings.includes(ev)){hasWarning=true;if(!topAlert)topAlert=a}
+    else if(watches.includes(ev)){hasWatch=true;if(!topAlert)topAlert=a}
+  }
+  if(hasWarning){appState='warning';setPollRate(60000)}
+  else if(hasWatch){appState='watch';setPollRate(180000)}
+  else{appState='calm';setPollRate(300000)}
+
+  // Sky background
+  document.getElementById('skyBg').className='sky-bg '+appState;
+
+  // Status bar
+  const sDot=document.getElementById('sDot');
+  const sRight=document.getElementById('sRight');
+  if(appState==='warning'){sDot.style.background='#C0386A';sRight.innerHTML='<span style="color:#C0386A">⚠ Warning Active</span>'}
+  else if(appState==='watch'){sDot.style.background='#FFD100';sRight.innerHTML='<span style="color:#FFD100">⚡ Watch Active</span>'}
+  else{sDot.style.background='#2DC88A';sRight.innerHTML='<span>✓ No active alerts</span>'}
+
+  // Weather display
+  const icon=document.getElementById('wxIcon');
+  const temp=document.getElementById('wxTemp');
+  const cond=document.getElementById('wxCond');
+  temp.textContent=wxData.temp!==null?wxData.temp+'°':'--°';
+  const desc=(wxData.desc||'').toLowerCase();
+  if(desc.includes('thunder'))icon.textContent='⛈';
+  else if(desc.includes('rain')||desc.includes('shower'))icon.textContent='🌧';
+  else if(desc.includes('snow'))icon.textContent='🌨';
+  else if(desc.includes('cloud')||desc.includes('overcast'))icon.textContent='☁️';
+  else if(desc.includes('fog'))icon.textContent='🌫';
+  else if(desc.includes('wind'))icon.textContent='💨';
+  else if(desc.includes('clear')||desc.includes('sunny')||desc.includes('fair'))icon.textContent='☀️';
+  else if(desc.includes('partly'))icon.textContent='⛅';
+  else icon.textContent='🌤';
+  if(appState==='warning')cond.textContent='⚠ '+topAlert.properties.event.toUpperCase();
+  else if(appState==='watch')cond.textContent='⚡ '+topAlert.properties.event.toUpperCase();
+  else cond.textContent=wxData.desc||'Current conditions';
+
+  // Alert banners
+  const bW=document.getElementById('bannerW');
+  const bD=document.getElementById('bannerD');
+  bW.classList.remove('show');bD.classList.remove('show');
+  if(hasWarning&&topAlert){bD.textContent='🌪 '+topAlert.properties.headline;bD.classList.add('show')}
+  else if(hasWatch&&topAlert){bW.textContent='⚡ '+topAlert.properties.headline;bW.classList.add('show')}
+
+  // Safe card
+  const sc=document.getElementById('safeCard');
+  const scT=document.getElementById('scTitle');
+  const scTx=document.getElementById('scText');
+  if(appState==='warning'){
+    sc.className='sc danger';
+    scT.textContent='Take shelter now';
+    scTx.textContent=topAlert?topAlert.properties.description.substring(0,200)+'...':'A warning is active in your area. Take shelter immediately.';
+  }else if(appState==='watch'){
+    sc.className='sc caution';
+    scT.textContent='Conditions are developing nearby';
+    scTx.textContent=topAlert?'A '+topAlert.properties.event+' is active. Based on current data, conditions may intensify. Stay aware and have a shelter plan ready.':'A weather watch is active. Stay aware.';
+  }else{
+    sc.className='sc safe';
+    scT.textContent='Based on current data, risk appears low';
+    scTx.textContent='No active warnings in your area at this time. Conditions appear '+((wxData.desc||'calm').toLowerCase())+'.';
+  }
+
+  // Detail grid
+  document.getElementById('dCond').textContent=wxData.desc||'--';
+  document.getElementById('dCond').style.color=appState==='warning'?'#C0386A':appState==='watch'?'#FFD100':'#2DC88A';
+  document.getElementById('dCondS').textContent=appState==='calm'?'Normal conditions':'Monitor changes';
+  document.getElementById('dWind').textContent=wxData.wind!==null?wxData.wind+' mph':'--';
+  document.getElementById('dWindS').textContent=wxData.wind!==null?(wxData.wind>30?'Strong':'Normal'):'Loading';
+  document.getElementById('dHum').textContent=wxData.humidity!==null?wxData.humidity+'%':'--';
+  document.getElementById('dHumS').textContent=wxData.humidity!==null?(wxData.humidity>80?'High moisture':'Normal'):'Loading';
+  document.getElementById('dAlerts').textContent=alerts.length;
+  document.getElementById('dAlerts').style.color=hasWarning?'#C0386A':hasWatch?'#FFD100':'#2DC88A';
+  document.getElementById('dAlertS').textContent=alerts.length===0?'All clear':alerts.length+' active';
+
+  // Companion message
+  updateCompanion();
+}
+
+function updateCompanion(){
+  const msg=document.getElementById('compMsg');
+  const desc=(wxData.desc||'').toLowerCase();
+  if(appState==='warning'){
+    const msgs=[
+      '"You\'re in your safe spot. That\'s exactly where you need to be. I\'m staying right here with you until this is over."',
+      '"This warning covers a wide area. Most people within it will be okay. Focus on your breathing. You are doing the right thing."',
+      '"I know this is scary. You took action and got to safety. That takes real courage. I\'ll tell you the moment this lifts."'
+    ];
+    msg.textContent=msgs[Math.floor(Math.random()*msgs.length)];
+  }else if(appState==='watch'){
+    const msgs=[
+      '"A watch means conditions are possible, not certain. Think of it as a heads-up. You have time. Let\'s use it to prepare, not panic."',
+      '"Right now, nothing dangerous is happening at your location. A watch just means to stay aware. I\'m monitoring things so you don\'t have to obsess over radar."',
+      '"Take a breath. A watch is not a warning. Most watches expire without anything happening near you. I\'ll let you know if that changes."'
+    ];
+    msg.textContent=msgs[Math.floor(Math.random()*msgs.length)];
+  }else{
+    if(desc.includes('thunder')||desc.includes('storm')){
+      msg.textContent='"There\'s some storm activity in the area, but no warnings for your location. The sounds might be intense, but based on current data, you\'re safe where you are."';
+    }else if(desc.includes('rain')||desc.includes('shower')){
+      msg.textContent='"Just rain — no severe weather. A good time to get cozy, put on some calm music, and let the rain do its thing. You\'re safe."';
+    }else if(desc.includes('cloud')||desc.includes('overcast')){
+      msg.textContent='"Cloudy skies, but nothing to worry about. No storms in sight for your area. Just a gray day — not a scary one."';
+    }else if(desc.includes('clear')||desc.includes('sunny')||desc.includes('fair')){
+      msg.textContent='"Beautiful conditions right now. No storms expected. Enjoy the calm — you\'ve earned it."';
+    }else{
+      msg.textContent='"Conditions look calm at your location. No active warnings. Skye is watching so you don\'t have to."';
+    }
+  }
+}
+
+// ═══ BRIEFING ═══
+function showBriefing(){
+  const box=document.getElementById('briefBox');
+  const txt=document.getElementById('briefText');
+  if(!forecastData||forecastData.length===0){box.style.display='none';return}
+  const today=forecastData[0];
+  const forecast=today.detailedForecast||today.shortForecast||'';
+  const hasSevere=forecast.toLowerCase().includes('thunder')||forecast.toLowerCase().includes('severe')||forecast.toLowerCase().includes('tornado');
+  let calm='';
+  if(hasSevere){
+    calm='There\'s a chance of storms later. But right now, you\'re fine. Skye will check in if anything develops — you don\'t need to monitor the radar all day. If conditions change, you\'ll know.';
+  }else if(forecast.toLowerCase().includes('rain')){
+    calm='Some rain is possible today, but nothing severe in the forecast. A normal rainy day — no need to worry. Skye is watching.';
+  }else{
+    calm='Today looks calm. No storms expected in your area. Enjoy your day knowing Skye is keeping an eye on things for you.';
+  }
+  txt.textContent=calm;
+  box.style.display='block';
+}
+
+// ═══ AM I SAFE ═══
+function openSafe(){
+  const i=document.getElementById('smI');
+  const t=document.getElementById('smT');
+  const p=document.getElementById('smP');
+  const e=document.getElementById('smE');
+  if(appState==='warning'){
+    i.textContent='🌪';t.textContent='A warning is active — stay sheltered';t.style.color='#C0386A';
+    p.textContent='A warning is active in your area. You are doing the right thing by taking shelter. Stay in your safe room — interior room, lowest floor, away from windows.';
+    e.textContent='Skye will tell you the moment this warning lifts.';
+  }else if(appState==='watch'){
+    i.textContent='⚡';t.textContent='No immediate danger at this time';t.style.color='#FFD100';
+    p.textContent='A watch is active, meaning conditions could develop. Based on current data, no warnings have been issued for your specific location. Have your plan ready, but no action needed yet.';
+    e.textContent='Skye is monitoring and will alert you if anything changes.';
+  }else{
+    i.textContent='🛡';t.textContent='Based on current data, you appear safe';t.style.color='#2DC88A';
+    p.textContent='No active warnings for your area. Current conditions: '+(wxData.desc||'calm')+'. Wind: '+(wxData.wind!==null?wxData.wind+' mph':'unknown')+'.';
+    e.textContent='Skye is checking conditions every 5 minutes.';
+  }
+  document.getElementById('sOv').classList.add('open');
+}
+
+function closeSafe(ev){
+  if(!ev||ev.target===document.getElementById('sOv')||ev.target.classList.contains('s-modal-x')){
+    document.getElementById('sOv').classList.remove('open');
+  }
+}
+
+// ═══ NAV ═══
+function goScr(name,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('scr-'+name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelector('.main').scrollTop=0;
+}
+
+// ═══ OVERLAYS ═══
+function openOv(n){document.getElementById('ov-'+n).classList.add('open')}
+function closeOv(n){document.getElementById('ov-'+n).classList.remove('open');if(n==='breathing')stopBreath()}
+
+// ═══ BREATHING ═══
+function startBreath(){
+  const btn=document.getElementById('bBtn');
+  if(bInt){stopBreath();return}
+  btn.textContent='Stop';bPhase=0;bSec=4;bCycles=0;
+  updBreathUI();bInt=setInterval(bTick,1000);
+}
+function bTick(){
+  bSec--;if(bSec<=0){bPhase=(bPhase+1)%4;bSec=4;if(bPhase===0){bCycles++;document.getElementById('bCyc').textContent=bCycles+' cycle'+(bCycles>1?'s':'')+' complete'}}
+  updBreathUI();
+}
+function updBreathUI(){
+  const r=document.getElementById('bRing'),ins=document.getElementById('bInstr'),n=document.getElementById('bNum');
+  const ph=['Inhale','Hold','Exhale','Hold'],cl=['inhale','hold','exhale','hold'];
+  r.className='br-ring '+cl[bPhase];ins.textContent=ph[bPhase];n.textContent=bSec;
+}
+function stopBreath(){
+  clearInterval(bInt);bInt=null;
+  document.getElementById('bBtn').textContent='Begin';
+  document.getElementById('bRing').className='br-ring';
+  document.getElementById('bInstr').textContent='Ready';
+  document.getElementById('bNum').textContent='';
+}
+
+// ═══ GROUNDING ═══
+const GS=[{n:5,s:'things you can SEE',p:'Look around. Name five things you can see right now.',c:5},{n:4,s:'things you can TOUCH',p:'What are four things you can physically feel?',c:4},{n:3,s:'things you can HEAR',p:'Listen carefully. What three sounds do you notice?',c:3},{n:2,s:'things you can SMELL',p:'Take a breath. Two things you can smell?',c:2},{n:1,s:'thing you can TASTE',p:'What is one thing you can taste right now?',c:1}];
+let gStep=0,gFill=0;
+function renderGr(){
+  const b=document.getElementById('grBody');
+  if(gStep>=GS.length){b.innerHTML='<div class="gr-done"><div class="gr-done-i">🌿</div><h3>You\'re here. You\'re present.</h3><p style="max-width:280px;margin:8px auto 0">The storm is outside. You are inside, safe, and grounded.</p></div>';return}
+  const s=GS[gStep];gFill=0;let it='';
+  for(let i=0;i<s.c;i++)it+='<div class="gr-item" onclick="fillGr(this)">'+(i+1)+'</div>';
+  b.innerHTML='<div class="gr-step"><div class="gr-num">'+s.n+'</div><div class="gr-sense">'+s.s+'</div><div class="gr-prompt">'+s.p+'</div><div class="gr-items">'+it+'</div><button class="gr-next" id="grNext" disabled onclick="nextGr()">Next</button></div>';
+}
+function fillGr(el){if(el.classList.contains('filled'))return;el.classList.add('filled');el.textContent='✓';gFill++;if(gFill>=GS[gStep].c)document.getElementById('grNext').disabled=false}
+function nextGr(){gStep++;renderGr()}
+function resetGr(){gStep=0;gFill=0;renderGr()}
+
+// ═══ CHECKLIST ═══
+const CK=['I know where my safe room is','I have a flashlight with batteries','My phone is charged','I have water nearby','I know where my shoes are','I have a way to get weather alerts','My pets are accounted for','My family knows the plan','I have blankets or pillows for cover','I know the difference between watch and warning'];
+function renderCk(){document.getElementById('ckList').innerHTML=CK.map((x,i)=>'<div class="ck-item"><div class="ck-box" id="ck'+i+'" onclick="tglCk('+i+')">✓</div><div class="ck-label">'+x+'</div></div>').join('')}
+function tglCk(i){document.getElementById('ck'+i).classList.toggle('checked')}
+
+// ═══ FACTS ═══
+const FC=[
+  {e:'🔊',t:'Thunder can\'t hurt you',b:'Thunder is just air rapidly expanding from lightning\'s heat. The sound itself poses zero danger, no matter how loud.'},
+  {e:'⚡',t:'Lightning strikes are rare',b:'Your odds in any year: about 1 in 1,222,000. Inside a building, you\'re effectively safe.'},
+  {e:'🌪',t:'Watch ≠ Warning',b:'A watch means conditions are possible. A warning means something was detected. Most watches expire without incident.'},
+  {e:'🏠',t:'Your home is stronger than you think',b:'Modern homes are designed to withstand severe thunderstorms. Tornadoes are the exception, not the rule.'},
+  {e:'📉',t:'Most warnings pass without damage',b:'The vast majority of warnings expire without a tornado touching down in populated areas.'},
+  {e:'🧠',t:'Your anxiety is amplifying the threat',b:'Your alarm system is working overtime. The storm is real — but your fear is making it feel closer and bigger than it is.'}
+];
+function renderFc(){document.getElementById('fcBody').innerHTML='<p style="font-size:13px;color:#6A8BA8;margin-bottom:16px">Knowledge replaces fear.</p>'+FC.map(f=>'<div class="fc"><div class="fc-e">'+f.e+'</div><div class="fc-t">'+f.t+'</div><div class="fc-b">'+f.b+'</div></div>').join('')}
+
+// ═══ JOURNAL ═══
+let selMoodVal='';
+function selMood(btn){document.querySelectorAll('.mood-b').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selMoodVal=btn.textContent}
+function saveJournal(){
+  const text=document.getElementById('jText').value.trim();
+  if(!text&&!selMoodVal)return;
+  const entries=JSON.parse(localStorage.getItem('skye_journal')||'[]');
+  entries.unshift({date:new Date().toLocaleString(),mood:selMoodVal,text:text,state:appState,weather:wxData.desc||''});
+  localStorage.setItem('skye_journal',JSON.stringify(entries));
+  const btn=event.currentTarget;
+  btn.textContent='✓ Saved';btn.style.background='#6AAFE0';
+  setTimeout(()=>{btn.textContent='Save Entry';btn.style.background=''},2000);
+  document.getElementById('jText').value='';
+  document.querySelectorAll('.mood-b').forEach(b=>b.classList.remove('sel'));
+  selMoodVal='';
+  renderHistory();
+}
+
+// ═══ PROFILE ═══
+function renderProfile(){
+  const tList=document.getElementById('triggerList');
+  const saved=JSON.parse(localStorage.getItem('skye_triggers')||'null');
+  if(saved)TRIGGERS.forEach((t,i)=>{if(saved[t.id]!==undefined)t.on=saved[t.id]});
+  tList.innerHTML=TRIGGERS.map(t=>'<div class="tr"><div class="tr-info"><span class="tr-icon">'+t.icon+'</span><span class="tr-name">'+t.name+'</span></div><div class="tgl'+(t.on?' on':'')+'" onclick="tglTrigger(this,\''+t.id+'\')"><div class="tgl-k"></div></div></div>').join('');
+  const pList=document.getElementById('prefList');
+  pList.innerHTML=PREFS.map(p=>'<div class="tr"><div class="tr-info"><span class="tr-icon">'+p.icon+'</span><span class="tr-name">'+p.name+'</span></div><div class="tgl'+(p.on?' on':'')+'" onclick="this.classList.toggle(\'on\')"><div class="tgl-k"></div></div></div>').join('');
+}
+function tglTrigger(el,id){
+  el.classList.toggle('on');
+  const t=TRIGGERS.find(x=>x.id===id);if(t)t.on=el.classList.contains('on');
+  const obj={};TRIGGERS.forEach(t=>obj[t.id]=t.on);
+  localStorage.setItem('skye_triggers',JSON.stringify(obj));
+}
+function loadProfile(){
+  const saved=JSON.parse(localStorage.getItem('skye_triggers')||'null');
+  if(saved)TRIGGERS.forEach(t=>{if(saved[t.id]!==undefined)t.on=saved[t.id]});
+}
+
+// ═══ HISTORY ═══
+function renderHistory(){
+  const entries=JSON.parse(localStorage.getItem('skye_journal')||'[]');
+  const hS=document.getElementById('hStorms');
+  const hA=document.getElementById('hAvg');
+  const hT=document.getElementById('hTools');
+  hS.textContent=entries.length;
+  const moods={'😰':9,'😟':7,'😐':5,'😌':3,'😊':1};
+  if(entries.length>0){
+    const avg=entries.reduce((s,e)=>s+(moods[e.mood]||5),0)/entries.length;
+    hA.textContent=avg.toFixed(1);
+    hT.textContent=Math.round(entries.filter(e=>e.text.length>10).length/entries.length*100)+'%';
+  }
+  const log=document.getElementById('journalLog');
+  if(entries.length===0){
+    log.innerHTML='<div class="log-e"><div class="log-date">No entries yet</div><div class="log-note">After a storm, use the Post-Storm Journal in the Toolkit to log how you felt.</div></div>';
+  }else{
+    log.innerHTML=entries.slice(0,10).map(e=>'<div class="log-e"><div class="log-date">'+e.date+'</div><div class="log-type">'+(e.weather||'Storm event')+'</div><div class="log-feel">Mood: '+e.mood+'</div>'+(e.text?'<div class="log-note">"'+e.text+'"</div>':'')+'</div>').join('');
+  }
+  // Season bar
+  const now=new Date();const month=now.getMonth();
+  const pct=Math.max(0,Math.min(100,((month-2)/4)*100));
+  document.getElementById('hBar').style.width=pct+'%';
+}
+
+// ═══ INIT ═══
+renderGr();renderCk();renderFc();renderProfile();renderHistory();
+initApp();
+</script>
+
+</body>
+</html>
