@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0B1520">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.weather.gov; img-src 'self' data:">
 <title>Skye — Calm Through Every Storm</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
@@ -329,10 +331,10 @@ body{background:#0B1520;color:#C8DCF0;font-family:'DM Sans',sans-serif;font-weig
   <!-- NAV -->
 
   <div class="bottom-nav">
-    <button class="nav-btn active" onclick="goScr('home',this)"><div class="ni">🌦</div><div class="nl">Now</div></button>
-    <button class="nav-btn" onclick="goScr('toolkit',this)"><div class="ni">🧘</div><div class="nl">Toolkit</div></button>
-    <button class="nav-btn" onclick="goScr('profile',this)"><div class="ni">⚙️</div><div class="nl">Profile</div></button>
-    <button class="nav-btn" onclick="goScr('history',this)"><div class="ni">📊</div><div class="nl">History</div></button>
+    <button class="nav-btn active" aria-label="Now" onclick="goScr('home',this)"><div class="ni">🌦</div><div class="nl">Now</div></button>
+    <button class="nav-btn" aria-label="Anxiety Toolkit" onclick="goScr('toolkit',this)"><div class="ni">🧘</div><div class="nl">Toolkit</div></button>
+    <button class="nav-btn" aria-label="Fear Profile" onclick="goScr('profile',this)"><div class="ni">⚙️</div><div class="nl">Profile</div></button>
+    <button class="nav-btn" aria-label="Storm Season History" onclick="goScr('history',this)"><div class="ni">📊</div><div class="nl">History</div></button>
   </div>
 </div>
 
@@ -353,7 +355,7 @@ body{background:#0B1520;color:#C8DCF0;font-family:'DM Sans',sans-serif;font-weig
 <div class="mood-sel"><button class="mood-b" onclick="selMood(this)">😰</button><button class="mood-b" onclick="selMood(this)">😟</button><button class="mood-b" onclick="selMood(this)">😐</button><button class="mood-b" onclick="selMood(this)">😌</button><button class="mood-b" onclick="selMood(this)">😊</button></div>
 <div style="font-size:12px;color:#3A5570;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em">What helped? What didn't?</div>
 <textarea class="j-area" id="jText" placeholder="The breathing timer helped me calm down..."></textarea>
-<button class="j-save" onclick="saveJournal()">Save Entry</button>
+<button class="j-save" onclick="saveJournal(this)">Save Entry</button>
 </div></div>
 
 <!-- SAFE MODAL -->
@@ -406,6 +408,7 @@ function initApp(){
 
 function onGeo(pos){
   lat=pos.coords.latitude;lon=pos.coords.longitude;
+  if(lat<-90||lat>90||lon<-180||lon>180){showLoadErr('Invalid coordinates received. Using default location.');lat=31.2;lon=-85.1;locName='Columbia, AL';setTimeout(startApp,1500);return}
   document.getElementById('loadMsg').textContent='Getting weather data...';
   getLocationName().then(()=>startApp()).catch(()=>{locName=lat.toFixed(2)+', '+lon.toFixed(2);startApp()});
 }
@@ -423,13 +426,13 @@ function showLoadErr(msg){
 
 async function getLocationName(){
   try{
-    const r=await fetch('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:{'User-Agent':'Skye Weather App (skye.ctes.app@gmail.com)'}});
+    const r=await fetch('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:{'User-Agent':'Skye Weather App'}});
     const d=await r.json();
     if(d.properties&&d.properties.relativeLocation){
       const rl=d.properties.relativeLocation.properties;
       locName=rl.city+', '+rl.state;
     }
-  }catch(e){locName=lat.toFixed(2)+', '+lon.toFixed(2)}
+  }catch(e){console.error('Location name fetch error:',e);locName=lat.toFixed(2)+', '+lon.toFixed(2)}
 }
 
 async function startApp(){
@@ -448,12 +451,13 @@ async function fetchWeather(){
   try{
     const r=await fetch('https://api.weather.gov/points/'+lat.toFixed(4)+','+lon.toFixed(4),{headers:{'User-Agent':'Skye Weather App'}});
     const d=await r.json();
+    if(!d.properties||!d.properties.forecast||!d.properties.observationStations)throw new Error('Unexpected API response structure');
     const fUrl=d.properties.forecast;
     const oUrl=d.properties.observationStations;
     // Get forecast
     const fr=await fetch(fUrl,{headers:{'User-Agent':'Skye Weather App'}});
     const fd=await fr.json();
-    forecastData=fd.properties.periods;
+    forecastData=(fd.properties&&fd.properties.periods)||null;
     // Get current observation
     const or=await fetch(oUrl,{headers:{'User-Agent':'Skye Weather App'}});
     const od=await or.json();
@@ -462,16 +466,16 @@ async function fetchWeather(){
       const sr=await fetch(stUrl,{headers:{'User-Agent':'Skye Weather App'}});
       const sd=await sr.json();
       const p=sd.properties;
-      wxData.temp=p.temperature.value!==null?Math.round(p.temperature.value*9/5+32):null;
-      wxData.humidity=p.relativeHumidity.value!==null?Math.round(p.relativeHumidity.value):null;
-      wxData.wind=p.windSpeed.value!==null?Math.round(p.windSpeed.value*0.621371):null;
-      wxData.windDir=p.windDirection.value;
+      wxData.temp=p.temperature&&p.temperature.value!==null?Math.round(p.temperature.value*9/5+32):null;
+      wxData.humidity=p.relativeHumidity&&p.relativeHumidity.value!==null?Math.round(p.relativeHumidity.value):null;
+      wxData.wind=p.windSpeed&&p.windSpeed.value!==null?Math.round(p.windSpeed.value*0.621371):null;
+      wxData.windDir=p.windDirection?p.windDirection.value:null;
       wxData.desc=p.textDescription||'';
     }
   }catch(e){
-    console.log('Weather fetch error:',e);
+    console.error('Weather fetch error:',e);
     if(forecastData===null&&wxData.temp===undefined){
-      wxData.temp=null;wxData.desc='Unable to load';wxData.humidity=null;wxData.wind=null;
+      wxData.temp=null;wxData.desc='Unable to load';wxData.humidity=null;wxData.wind=null;wxData.windDir=null;
     }
   }
 }
@@ -731,16 +735,18 @@ const FC=[
 ];
 function renderFc(){document.getElementById('fcBody').innerHTML='<p style="font-size:13px;color:#6A8BA8;margin-bottom:16px">Knowledge replaces fear.</p>'+FC.map(f=>'<div class="fc"><div class="fc-e">'+f.e+'</div><div class="fc-t">'+f.t+'</div><div class="fc-b">'+f.b+'</div></div>').join('')}
 
+// ═══ UTILITIES ═══
+function escapeHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+
 // ═══ JOURNAL ═══
 let selMoodVal='';
 function selMood(btn){document.querySelectorAll('.mood-b').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');selMoodVal=btn.textContent}
-function saveJournal(){
+function saveJournal(btn){
   const text=document.getElementById('jText').value.trim();
   if(!text&&!selMoodVal)return;
   const entries=JSON.parse(localStorage.getItem('skye_journal')||'[]');
-  entries.unshift({date:new Date().toLocaleString(),mood:selMoodVal,text:text,state:appState,weather:wxData.desc||''});
+  entries.unshift({date:new Date().toISOString(),mood:selMoodVal,text:text,state:appState,weather:wxData.desc||''});
   localStorage.setItem('skye_journal',JSON.stringify(entries));
-  const btn=event.currentTarget;
   btn.textContent='✓ Saved';btn.style.background='#6AAFE0';
   setTimeout(()=>{btn.textContent='Save Entry';btn.style.background=''},2000);
   document.getElementById('jText').value='';
@@ -786,11 +792,15 @@ function renderHistory(){
   if(entries.length===0){
     log.innerHTML='<div class="log-e"><div class="log-date">No entries yet</div><div class="log-note">After a storm, use the Post-Storm Journal in the Toolkit to log how you felt.</div></div>';
   }else{
-    log.innerHTML=entries.slice(0,10).map(e=>'<div class="log-e"><div class="log-date">'+e.date+'</div><div class="log-type">'+(e.weather||'Storm event')+'</div><div class="log-feel">Mood: '+e.mood+'</div>'+(e.text?'<div class="log-note">"'+e.text+'"</div>':'')+'</div>').join('');
+    log.innerHTML=entries.slice(0,10).map(e=>'<div class="log-e"><div class="log-date">'+escapeHtml(e.date)+'</div><div class="log-type">'+escapeHtml(e.weather||'Storm event')+'</div><div class="log-feel">Mood: '+escapeHtml(e.mood)+'</div>'+(e.text?'<div class="log-note">&#8220;'+escapeHtml(e.text)+'&#8221;</div>':'')+'</div>').join('');
   }
-  // Season bar
-  const now=new Date();const month=now.getMonth();
-  const pct=Math.max(0,Math.min(100,((month-2)/4)*100));
+  // Season bar (March 1 – June 30)
+  const now=new Date();
+  const seasonStart=new Date(now.getFullYear(),2,1);
+  const seasonEnd=new Date(now.getFullYear(),5,30);
+  const totalMs=seasonEnd-seasonStart;
+  const elapsedMs=now-seasonStart;
+  const pct=Math.max(0,Math.min(100,(elapsedMs/totalMs)*100));
   document.getElementById('hBar').style.width=pct+'%';
 }
 
