@@ -726,9 +726,9 @@ function tglCk(i){document.getElementById('ck'+i).classList.toggle('checked')}
 const FC=[
   {e:'🔊',t:'Thunder can\'t hurt you',b:'Thunder is just air rapidly expanding from lightning\'s heat. The sound itself poses zero danger, no matter how loud.'},
   {e:'⚡',t:'Lightning strikes are rare',b:'Your odds in any year: about 1 in 1,222,000. Inside a building, you\'re effectively safe.'},
-  {e:'🌪',t:'Watch ≠ Warning',b:'Tornadoes are relatively small, while warning polygons are larger to account for uncertainty.'},
+  {e:'🌪',t:'Watch ≠ Warning',b:'A watch means conditions are possible. A warning means something was detected. Most watches expire without incident.'},
   {e:'🏠',t:'Your home is stronger than you think',b:'Modern homes are designed to withstand severe thunderstorms. Tornadoes are the exception, not the rule.'},
-  {e:'📉',t:'Most warnings pass without damage',b:'The vast majority of warnings expire without a tornado touching down in populated areas.'},
+  {e:'📉',t:'Most warnings pass without damage',b:'Tornadoes are relatively small, while warning polygons are larger to account for uncertainty.'},
   {e:'🧠',t:'Your anxiety is amplifying the threat',b:'Your alarm system is working overtime. The storm is real — but your fear is making it feel closer and bigger than it is.'}
 ];
 function renderFc(){document.getElementById('fcBody').innerHTML='<p style="font-size:13px;color:#6A8BA8;margin-bottom:16px">Knowledge replaces fear.</p>'+FC.map(f=>'<div class="fc"><div class="fc-e">'+f.e+'</div><div class="fc-t">'+f.t+'</div><div class="fc-b">'+f.b+'</div></div>').join('')}
