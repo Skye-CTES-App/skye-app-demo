@@ -718,7 +718,7 @@ function nextGr(){gStep++;renderGr()}
 function resetGr(){gStep=0;gFill=0;renderGr()}
 
 // ═══ CHECKLIST ═══
-const CK=['I know where my safe room is','I have a flashlight with batteries','My phone is charged','I have water nearby','I know where my shoes are','I have a way to get weather alerts','My pets are accounted for','My family knows the plan','I have blankets or pillows for cover','I know the difference between watch and warning'];
+const CK=['I know where my safe room is','I have a flashlight with batteries','My phone is charged','I have water nearby','I know where my shoes are','I have a way to get weather alerts','My pets are accounted for','My family knows the plan','I have a helmet and closed-toe shoes','I know the difference between watch and warning','I have my NOAA Weather Radio'];
 function renderCk(){document.getElementById('ckList').innerHTML=CK.map((x,i)=>'<div class="ck-item"><div class="ck-box" id="ck'+i+'" onclick="tglCk('+i+')">✓</div><div class="ck-label">'+x+'</div></div>').join('')}
 function tglCk(i){document.getElementById('ck'+i).classList.toggle('checked')}
 
@@ -726,7 +726,7 @@ function tglCk(i){document.getElementById('ck'+i).classList.toggle('checked')}
 const FC=[
   {e:'🔊',t:'Thunder can\'t hurt you',b:'Thunder is just air rapidly expanding from lightning\'s heat. The sound itself poses zero danger, no matter how loud.'},
   {e:'⚡',t:'Lightning strikes are rare',b:'Your odds in any year: about 1 in 1,222,000. Inside a building, you\'re effectively safe.'},
-  {e:'🌪',t:'Watch ≠ Warning',b:'A watch means conditions are possible. A warning means something was detected. Most watches expire without incident.'},
+  {e:'🌪',t:'Watch ≠ Warning',b:'Tornadoes are relatively small, while warning polygons are larger to account for uncertainty.'},
   {e:'🏠',t:'Your home is stronger than you think',b:'Modern homes are designed to withstand severe thunderstorms. Tornadoes are the exception, not the rule.'},
   {e:'📉',t:'Most warnings pass without damage',b:'The vast majority of warnings expire without a tornado touching down in populated areas.'},
   {e:'🧠',t:'Your anxiety is amplifying the threat',b:'Your alarm system is working overtime. The storm is real — but your fear is making it feel closer and bigger than it is.'}
